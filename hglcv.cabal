@@ -16,9 +16,11 @@ library
   hs-source-dirs:      src
   if os(Darwin)
     c-sources: cbits/glcv/src/cocoaarc.m
+    ld-options: -framework OpenGL -framework AppKit
   else
     if os(Windows)
       c-sources: cbits/glcv/src/win.c
+      extra-libraries: opengl32
     else
       if os(Android)
         c-sources: cbits/glcv/src/android.c 
@@ -28,7 +30,6 @@ library
         else
           c-sources: cbits/glcv/src/xlib.c
   cc-options: -DCV_NO_MAIN -DCV_EXPLICIT_ENTRY
-  ld-options: -framework OpenGL -framework AppKit
   exposed-modules:     GLCV
                      , GLCV.Key
                      , GLCV.Event
