@@ -16,7 +16,8 @@ library
   hs-source-dirs:      src
   if os(Darwin)
     c-sources: cbits/glcv/src/cocoaarc.m
-    ld-options: -framework OpenGL -framework AppKit
+    frameworks: OpenGL
+              , AppKit
   else
     if os(Windows)
       c-sources: cbits/glcv/src/win.c
