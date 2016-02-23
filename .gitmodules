@@ -1,0 +1,3 @@
+[submodule "cbits/glcv"]
+	path = cbits/glcv
+	url = https://github.com/jacereda/glcv.git
