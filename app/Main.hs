@@ -19,8 +19,8 @@ main = run "test" 0 0 640 480 on
           h <- height
           x <- mouseX
           y <- mouseY
-          let r = (fromIntegral x / fromIntegral w)
-          let g = (fromIntegral y / fromIntegral h)
+          let r = fromIntegral x / fromIntegral w
+          let g = fromIntegral y / fromIntegral h
           glClearColor r g 0 1
           glClear GL_COLOR_BUFFER_BIT
         on e = print e
