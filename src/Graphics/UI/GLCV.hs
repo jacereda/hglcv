@@ -1,19 +1,31 @@
+{-|-}
 {-# LANGUAGE ForeignFunctionInterface #-}
-module GLCV(run, quit, fullscreen, windowed, size, mouse) where
-import Unsafe.Coerce
-import Foreign.C
-import Foreign.C.Types
-import Foreign.Ptr
-import Foreign.C.String
-import Control.Monad
-import Data.Char(chr)
+module Graphics.UI.GLCV( run
+                       , quit
+                       , fullscreen
+                       , windowed
+                       , size
+                       , width
+                       , height
+                       , mouse
+                       , mouseX
+                       , mouseY
+                       ) where
 
-import GLCV.Event
+import           Data.Char              (chr)
+import           Foreign.C
+import           Foreign.C.Types
+import           Foreign.Ptr
+import           Graphics.UI.GLCV.Event
+import           Unsafe.Coerce
 
 newtype Ev = Ev (Ptr Ev)
 
+-- | Terminate event loop.
 foreign import ccall "cvQuit" quit :: IO ()
+-- | Enter fullscreen mode.
 foreign import ccall "cvFullscreen" fullscreen :: IO ()
+-- | Enter windowed mode.
 foreign import ccall "cvWindowed" windowed :: IO ()
 foreign import ccall "cvWidth" cvWidth :: IO CInt
 foreign import ccall "cvHeight" cvHeight :: IO CInt
@@ -41,14 +53,25 @@ evHeight = wrapped evHeight'
 evWhich = wrapped evWhich'
 evUnicode = wrapped evUnicode'
 
-pack :: CInt -> CInt -> (Int, Int)
-pack x y = (fromIntegral x, fromIntegral y)
 
-size :: IO (Int, Int)
-size = ($!) liftM2 pack cvWidth cvHeight
+width, height, mouseX, mouseY :: IO Int
+-- | Current window width.
+width = fromIntegral <$> cvWidth
+-- | Current window height.
+height = fromIntegral <$> cvHeight
+-- | Current mouse X coordinate relative to window origin.
+mouseX = fromIntegral <$> cvMouseX
+-- | Current mouse Y coordinate relative to window origin.
+mouseY = fromIntegral <$> cvMouseY
 
-mouse :: IO (Int, Int)
-mouse = ($!) liftM2 pack cvMouseX cvMouseY
+pack :: Int -> Int -> (Int, Int)
+pack a b = seq a $ seq b (a,b)
+
+size, mouse :: IO (Int, Int)
+-- | Current window size.
+size = pack <$> width <*> height
+-- | Current mouse coordinate relative to window origin.
+mouse = pack <$> mouseX <*> mouseY
 
 foreign import ccall "wrapper"
   wrap :: (Ev -> IO CIntPtr) -> IO (FunPtr (Ev -> IO CIntPtr))
@@ -82,7 +105,14 @@ data RawEvent = RNone
               | RInternalQuit
               deriving (Show, Enum)
 
-run :: String -> Int -> Int -> Int -> Int -> (Event -> IO ()) -> IO ()
+-- | Run the application loop.
+run :: String -- ^ Window name.
+    -> Int -- ^ Initial horizontal window coordinate.
+    -> Int -- ^ Initial vertical window coordinate.
+    -> Int -- ^ Initial window width.
+    -> Int -- ^ Initial window height.
+    -> (Event -> IO ()) -- ^ Event handler function.
+    -> IO ()
 run name x y w h on  = do
   let handler :: Ev -> IO CIntPtr
       handler ev = do
@@ -104,11 +134,11 @@ run name x y w h on  = do
           REUnicode -> evUnicode ev >>= wevent . Unicode . chr
           REMotion -> Motion <$> evX ev <*> evY ev >>= wevent
           REClose -> wevent Close
-          REInvoke -> wevent Invoke
+--          REInvoke -> Invoke <$> evMethod ev >>= wevent
           REResize -> Resize <$> evWidth ev <*> evHeight ev >>= wevent
           REUpdate -> wevent Update
           _ -> ret 0
   whandler <- wrap handler
-  cvRun whandler
+  _ <- cvRun whandler
   freeHaskellFunPtr whandler
   return ()

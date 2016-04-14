@@ -1,5 +1,7 @@
-module GLCV.Key where
+{-|-}
+module Graphics.UI.GLCV.Key where
 
+-- | Possible keys/buttons.
 data Key = KNone
          | MouseWheelUp
          | MouseWheelDown
